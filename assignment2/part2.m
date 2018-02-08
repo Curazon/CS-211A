@@ -84,3 +84,20 @@ colorbar;
 
 figure('Name', 'recon, notch filter');
 imshow(ifft2(ifftshift(filtered)));
+
+
+%%
+
+
+
+mask_img = rgb2gray(im2double(imread('untitled.png'))) > 0.5;
+
+filtered = out_fftshift;
+filtered(~mask_img) = 0;
+
+figure('Name', 'DFT, notch filter 2');
+imagesc(log(abs(filtered) + 1));
+colorbar;
+
+figure('Name', 'recon, notch filter 2');
+imshow(ifft2(ifftshift(filtered)));
