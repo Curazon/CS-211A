@@ -4,6 +4,7 @@
 #include "glut\glut.h"
 #include <memory.h>
 #include <math.h>
+#include <cmath>
 #include "mymath.h"
  
 #define PI       3.14159265358979323846
@@ -330,51 +331,40 @@ void placeCam(float posX, float posY, float posZ, float lookX, float lookY, floa
 // Generates a rotation matrix.  Angle is in radian.
 float * rotationMatrix(float x, float y, float z, float angle)
 {
-	// inputs:  x,y,z: rotation vector
-	//          angle:  angle of rotation around vector(x,y,z)
+    double L = (x * x + y * y + z * z);
+    double radian = angle * M_PI / 180.0;
+    double u2 = x * x;
+    double v2 = y * y;
+    double w2 = z * z;
 
-	float radian = angle * PI / 180;
+    double mat[4][4];
+    mat[0][0] = (u2 + (v2 + w2) * std::cos(radian)) / L;
+    mat[0][1] = (x * y * (1 - std::cos(radian)) - z * std::sqrt(L) * std::sin(radian)) / L;
+    mat[0][2] = (x * z * (1 - std::cos(radian)) + y * std::sqrt(L) * std::sin(radian)) / L;
+    mat[0][3] = 0.0;
 
-	// x = a, y = b, z = c, y^2 + z^2 = d
-	float Rx[16] = {1, 0, 0, 0,
-				0, z/sqrt(pow(y, 2) + pow(z, 2)), -y/sqrt(pow(y, 2) + pow(z, 2)), 0,
-				0, y/sqrt(pow(y, 2) + pow(z, 2)), z/sqrt(pow(y, 2) + pow(z, 2)), 0,
-				0, 0, 0, 1};
+    mat[1][0] = (x * y * (1 - std::cos(radian)) + z * std::sqrt(L) * std::sin(radian)) / L;
+    mat[1][1] = (v2 + (u2 + w2) * std::cos(radian)) / L;
+    mat[1][2] = (y * z * (1 - std::cos(radian)) - x * std::sqrt(L) * std::sin(radian)) / L;
+    mat[1][3] = 0.0;
 
-	float rx[16] = { 1, 0, 0, 0,
-				0, z / sqrt(pow(y, 2) + pow(z, 2)), y / sqrt(pow(y, 2) + pow(z, 2)), 0,
-				0, -y / sqrt(pow(y, 2) + pow(z, 2)), z / sqrt(pow(y, 2) + pow(z, 2)), 0,
-				0, 0, 0, 1 };
+    mat[2][0] = (x * z * (1 - std::cos(radian)) - y * std::sqrt(L) * std::sin(radian)) / L;
+    mat[2][1] = (y * z * (1 - std::cos(radian)) + x * std::sqrt(L) * std::sin(radian)) / L;
+    mat[2][2] = (w2 + (u2 + v2) * std::cos(radian)) / L;
+    mat[2][3] = 0.0;
 
-	float Ry[16] = { sqrt(pow(y, 2) + pow(z, 2)), 0, -x, 0,
-					0, 1, 0, 0,
-					x, 0, sqrt(pow(y, 2) + pow(z, 2)), 0,
-					0, 0, 0, 1 };
+    mat[3][0] = 0.0;
+    mat[3][1] = 0.0;
+    mat[3][2] = 0.0;
+    mat[3][3] = 1.0;
 
-	float ry[16] = { sqrt(pow(y, 2) + pow(z, 2))/(pow(x, 2) + pow(y, 2) + pow(z, 2)), 0, x / (pow(x, 2) + pow(y, 2) + pow(z, 2)), 0,
-					0, 1, 0, 0,
-					-x /(pow(x, 2) + pow(y, 2) + pow(z, 2)), 0, sqrt(pow(y, 2) + pow(z, 2)) / (pow(x, 2) + pow(y, 2) + pow(z, 2)), 0,
-					0, 0, 0, 1 };
-
-	float Rz[16] = { cos(radian), -sin(radian), 0, 0,
-					sin(radian), cos(radian), 0, 0,
-					0, 0, 1, 0,
-					0, 0, 0, 1 };
-
-	multiplyMatrix(Ry, Rx);
-
-	multiplyMatrix(Rz, Ry);
-
-	multiplyMatrix(ry, Rz);
-
-	multiplyMatrix(rx, ry);
-
-	&rotationMatrix = rx;
-
-	// rotationMatrix = multiplyMatrix(rx, multiplyMatrix(ry, multiplyMatrix(Rz, multiplyMatrix(Ry, Rx))));
-
-	// output:  returns rotation matrix 
-
+    auto *ret = new float[16];
+    for (int i = 0; i < 4; ++i) {
+      for (int j = 0; j < 4; ++j) {
+        ret[i * 4 + j] = (float) mat[i][j];
+      }
+    }
+    return ret;
 }
  
 // Projection Matrix
@@ -395,42 +385,16 @@ void setTransMatrix(float *mat, float x, float y, float z) {
 	// inputs:  x: translation in x direction 
 	//          y: translation in y direction
 	//          z: translation in z direction
+    float values[16] = {
+        1, 0, 0, x,
+        0, 1, 0, y,
+        0, 0, 1, z,
+        0, 0, 0, 1,
+    };
 
-	float vec[3] = { x,y,z };
-
-	for (int i = 0; i < 4; ++i) {
-		for (int j = 0; j < 4; ++j) {
-
-			if (j == i) {
-				mat[j * 4 + i] = 1;
-			}
-
-			else if (j == 3) {
-				if (i == 0) {
-					mat[j + (j*i) + i] = vec[i];
-				}
-				if (i == 1) {
-					mat[j + (j*i) + i] = vec[i];
-				}
-				if (i == 2) {
-					mat[j + (j*i) + i] = vec[i];
-				}
-				if (i == 3) {
-					mat[j + (j*i) + i] = 1;
-				}
-				else {
-					mat[j * 4 + i] = 0;
-				}
-
-				//std::cout << j + (j*i) + i << std::endl;
-
-				//mat[j + (j*i) + i] = vec[i];
-			}
-		}
-	}
-
-	// output:  mat : translation matrix 
-    
+    for (int i = 0; i < 16; ++i) {
+      mat[i] = values[i];
+    }
 }
 
 //Transformation matrix mat with a scaling
