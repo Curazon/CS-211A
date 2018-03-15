@@ -1,0 +1,52 @@
+#version 330
+ 
+uniform mat4 viewMatrix, projMatrix;
+uniform mat3 normalMatrix;
+
+uniform vec4 Ambient;
+uniform vec3 LightColor;
+uniform vec3 LightPosition;
+uniform float Shininess;
+uniform float Strength;
+uniform vec3 EyeDirection;
+
+layout (location = 0) in vec4 position;
+in vec3 normal;
+in vec3 color;
+
+layout(location = 1) in vec2 vertexUV;
+ 
+out vec3 Color;
+out vec3 GouraudColor;
+out vec3 Normal;
+out vec4 Position;
+
+// UV is the texture coordinate of this vertex
+out vec2 UV;
+
+void main()
+{
+	Normal = normalize(normalMatrix * normal);
+	UV = vertexUV;
+    Color = color;
+    Position = viewMatrix*position;
+
+    gl_Position = projMatrix*Position;
+
+    // Direction from surface point to light source in camera coordinates.
+    vec3 L = normalize(LightPosition - vec3(Position));
+
+    // Direction from surface point to camera in camera coordinates.
+    vec3 V = normalize(-vec3(Position));
+
+    // Surface normal in camera coordinates.
+    vec3 N = Normal;
+
+    // Half-vector used in blinn-phong shading.
+    vec3 H = (L+V)/length(L+V);
+    vec3 R = 2*dot(L, N)*N-L;
+
+    GouraudColor = vec3(Ambient) + max(0, dot(L, N))*Color*LightColor + Strength*pow(max(0, dot(H, N)), Shininess);
+}
+
+

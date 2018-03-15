@@ -1,0 +1,48 @@
+#version 330
+
+uniform mat4 viewMatrix, projMatrix;
+
+uniform vec4 Ambient;
+uniform vec3 LightColor;
+uniform vec3 LightPosition;
+uniform float Shininess;
+uniform float Strength;
+uniform vec3 EyeDirection;
+uniform sampler2D myTextureSampler;
+uniform int Mode;
+
+in vec3 Color;
+in vec3 Normal;
+in vec4 Position;
+in vec3 GouraudColor;
+
+in vec2 UV;
+
+out vec4 outputF;
+
+void main()
+{
+    // Direction from surface point to light source in camera coordinates.
+    vec3 L = normalize(LightPosition - vec3(Position));
+
+    // Direction from surface point to camera in camera coordinates.
+    vec3 V = normalize(-vec3(Position));
+
+    // Surface normal in camera coordinates.
+    vec3 N = Normal;
+
+    // Half-vector used in blinn-phong shading.
+    vec3 H = (L+V)/length(L+V);
+
+    vec3 R = 2*dot(L, N)*N-L;
+
+    vec3 PhongColor = vec3(Ambient) + max(0, dot(L, N))*Color*LightColor + Strength*pow(max(0, dot(H, N)), Shininess);
+
+    if (Mode==0) {
+    	outputF = vec4(PhongColor,1);
+    } else if (Mode==1) {
+    	outputF = vec4(GouraudColor,1);
+    } else {
+    	outputF = vec4(Color,1);
+    }
+}
